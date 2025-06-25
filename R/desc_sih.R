@@ -15,10 +15,8 @@ library(tidyr)
 library(DT)
 library(haven)
 library(writexl)
-library(RPostgres)
-library(DBI)
 
-df_sih <- read.csv2("dados/tela_sih.csv")
+load("dados/df_sih.Rdata")
 
 sih_ui <- function(id) {
   ns <- NS(id)
@@ -41,11 +39,11 @@ sih_ui <- function(id) {
                        `actions-box` = TRUE,
                        noneSelectedText = "Nenhuma seleção"
                      ),
-                     choices = c("<5", "05-09", "10-19",
+                     choices = c("<1", "01-04", "05-09", "10-19",
                                  "20-29", "30-39", "40-49",
                                  "50-59", "60-69", "70-79", 
                                  "80+", "Ignorada"),
-                     selected = c("<5", "05-09", "10-19",
+                     selected = c("<1", "01-04", "05-09", "10-19",
                                   "20-29", "30-39", "40-49",
                                   "50-59", "60-69", "70-79", 
                                   "80+", "Ignorada")
@@ -156,16 +154,16 @@ sih_server <- function(id) {
         
         a <-  df_sih |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ano %in% input$filtro_ano
           ) |> 
-          tab_1(faixa_etaria_padrao) |>
-          filter(faixa_etaria_padrao != "Total") |> 
-          mutate(cor = ifelse(faixa_etaria_padrao == "Ignorada", "#9ba2cb", "#121E87")) |>
+          tab_1(faixa_etaria) |>
+          filter(faixa_etaria != "Total") |> 
+          mutate(cor = ifelse(faixa_etaria == "Ignorada", "#9ba2cb", "#121E87")) |>
           ggplot(aes(
-            x = faixa_etaria_padrao, y = `%`, fill = cor, 
-            text = paste("Faixa etária:", faixa_etaria_padrao, "\nProporção: ", `%`,"%", "\nRegistros: ", n)
+            x = faixa_etaria, y = `%`, fill = cor, 
+            text = paste("Faixa etária:", faixa_etaria, "\nProporção: ", `%`,"%", "\nRegistros: ", n)
           )
           ) + 
           geom_bar(stat = "identity")+
@@ -190,13 +188,13 @@ sih_server <- function(id) {
         content = function(file) {
           tabela_fxetaria <-  df_sih |>
             filter(
-              faixa_etaria_padrao %in% input$filtro_idade,
+              faixa_etaria %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ano %in% input$filtro_ano
             ) |>
-            tab_1(faixa_etaria_padrao) |>
-            filter(faixa_etaria_padrao != "Total") |>
-            arrange(faixa_etaria_padrao)
+            tab_1(faixa_etaria) |>
+            filter(faixa_etaria != "Total") |>
+            arrange(faixa_etaria)
           write_xlsx(tabela_fxetaria, file)
         }
       )
@@ -207,7 +205,7 @@ sih_server <- function(id) {
       output$raca_cor_graf <- renderPlotly({
         dados_preparados <- df_sih |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ano %in% input$filtro_ano
           ) |>
@@ -255,7 +253,7 @@ sih_server <- function(id) {
         content = function(file) {
           tabela_raca <-  df_sih |>
             filter(
-              faixa_etaria_padrao %in% input$filtro_idade,
+              faixa_etaria %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ano %in% input$filtro_ano
             ) |>

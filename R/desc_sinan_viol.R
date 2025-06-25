@@ -24,7 +24,7 @@ library(readr)
 # Carregando os dados
 #df_sinan <- read_csv2('dados/tela_sinan_viol.csv', col_types = cols(.default = col_character()))
 
-load('dados/sinan_viol.RData')
+load('dados/df_sinan_viol.RData')
 
 
 df_sinan <- df_sinan |>
