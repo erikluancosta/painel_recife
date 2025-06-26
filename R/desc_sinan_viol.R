@@ -27,83 +27,6 @@ library(readr)
 load('dados/df_sinan_viol.RData')
 
 
-df_sinan <- df_sinan |>
-  mutate(
-    rede_enc_sau = case_when((rede_sau == "1" | enc_saude == "1") ~ 1,
-                             TRUE ~ 0),
-    assit_soc_creas = case_when((assist_soc == "1" | enc_creas == "1") ~ 1,
-                                TRUE ~ 0),
-    atend_enc_mulh = case_when((atend_mulh == "1" | enc_mulher == "1") ~ 1,
-                               TRUE ~ 0),
-    cons_enc_tutela = case_when((cons_tutel == "1" | enc_tutela == "1") ~ 1,
-                                TRUE ~ 0),
-    mpu_enc_mpu = case_when((mpu == "1" | enc_mpu == "1") ~ 1,
-                            TRUE ~ 0),
-    deleg_enc_cria = case_when((deleg_cria == "1" | enc_dpca == "1") ~ 1,
-                               TRUE ~ 0),
-    deleg_enc_mulh = case_when((deleg_mulh == "1" | enc_deam == "1") ~ 1,
-                               TRUE ~ 0),
-    deleg_enc_deleg = case_when((deleg == "1" | enc_deleg == "1") ~ 1,
-                                TRUE ~ 0),
-    infan_enc_juv = case_when((infan_juv == "1" | enc_vara == "1") ~ 1),
-    banco = "SINAN",
-    ds_autor_sexo = case_when(
-      autor_sexo == "1" ~ "Masculino",
-      autor_sexo == "2" ~ "Feminino",
-      autor_sexo == "3" ~ "Ambos os sexos",
-      TRUE ~ "Ignorado"
-    ),
-    autor_alco = case_when(
-      autor_alco == "1" ~ "Sim",
-      autor_alco == "2" ~ "Não",
-      TRUE ~ "Ignorado"
-    ),
-    les_autop = case_when(
-      les_autop == "1" ~ "Sim",
-      les_autop == "2" ~ "Não",
-      les_autop == "9" | is.na(les_autop) ~ "Ignorado",
-      TRUE ~ les_autop
-    ),
-    local_ocor = case_when(
-      local_ocor == "01" ~ "Residência",
-      local_ocor == "02" ~ "Habitação coletiva",
-      local_ocor == "03" ~ "Escola",
-      local_ocor == "04" ~ "Local de prática esportiva",
-      local_ocor == "05" ~ "Bar ou similar",
-      local_ocor == "06" ~ "Via publica",
-      local_ocor == "07" ~ "Comércio/Serviços",
-      local_ocor == "08" ~ "Industrias/ construção",
-      local_ocor == "09" ~ "Outro",
-      local_ocor == "99" ~ "Ignorado",
-      TRUE ~ "Ignorado"
-    ),
-    out_vezes = case_when(
-      out_vezes == "1" ~'Sim',
-      out_vezes == "2" ~'Não',
-      out_vezes == "9" ~'Ignorado',
-      TRUE ~ "Ignorado"
-    )
-  ) |> 
-  dplyr::mutate(
-    nu_idade_anos = as.numeric(nu_idade_anos),
-    faixa_etaria_padrao = dplyr::case_when(
-      nu_idade_anos < 1 ~ "<1",
-      nu_idade_anos >= 1 & nu_idade_anos <= 4 ~ "01-04",
-      nu_idade_anos >= 5 & nu_idade_anos <= 9 ~ "05-09", 
-      nu_idade_anos >= 10 & nu_idade_anos <= 19 ~ "10-19", 
-      nu_idade_anos >= 20 & nu_idade_anos <= 29 ~ "20-29", 
-      nu_idade_anos >= 30 & nu_idade_anos <= 39 ~ "30-39", 
-      nu_idade_anos >= 40 & nu_idade_anos <= 49 ~ "40-49", 
-      nu_idade_anos >= 50 & nu_idade_anos <= 59 ~ "50-59", 
-      nu_idade_anos >= 60 & nu_idade_anos <= 69 ~ "60-69", 
-      nu_idade_anos >= 70 & nu_idade_anos <= 79 ~ "70-79", 
-      nu_idade_anos >= 80 ~ "80+", 
-      TRUE ~ as.character(nu_idade_anos)
-    )
-  )
-
-
-
 
 # Categoria do sinan para o tipo de agressão
 agc <- data.frame(
@@ -313,7 +236,7 @@ sinan_ui <- function(id) {
                 inputId = ns("extrato_sinan_filter"),
                 label = "Extratificado por:", 
                 choices = c("Raça/cor" = 'ds_raca', 
-                            "Faixa etária" = 'faixa_etaria_padrao',
+                            "Faixa etária" = 'faixa_etaria',
                             "Ano da notificação" = 'ano',
                             "Outras vezes" = "out_vezes",
                             "Local de ocorrência" = 'local_ocor'),
@@ -375,19 +298,19 @@ sinan_ui <- function(id) {
                    pickerInput(
                      inputId = ns("var1"),
                      label = "Variável da linha",
-                     choices = c("Faixa etária" = 'faixa_etaria_padrao', 
+                     choices = c("Faixa etária" = 'faixa_etaria', 
                                  "Raça/cor" = 'ds_raca', 
                                  "Ano da notificação" = 'ano',
                                  "Outras vezes"='out_vezes',
                                  "Local de ocorrência" = 'local_ocor'),
-                     selected = "faixa_etaria_padrao",
+                     selected = "faixa_etaria",
                      options = list(`actions-box` = TRUE),
                      multiple = FALSE
                    ),
                    pickerInput(
                      inputId = ns("var2"),
                      label = "Variável da coluna",
-                     choices = c(#"Faixa etária" = 'faixa_etaria_padrao', 
+                     choices = c(#"Faixa etária" = 'faixa_etaria', 
                                  "Raça/cor" = 'ds_raca', 
                                  "Ano da notificação" = 'ano',
                                  "Outras vezes"='out_vezes'
@@ -428,7 +351,7 @@ sinan_server <- function(id) {
         
         a <- df_filtrado |> 
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             les_autop %in% input$les_autop_fil
             
@@ -469,17 +392,17 @@ sinan_server <- function(id) {
         
         a <- df_filtrado |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             les_autop %in% input$les_autop_fil,
             ano %in% input$filtro_ano
           ) |>
-          tab_1(faixa_etaria_padrao) |>
-          filter(faixa_etaria_padrao != "Total") |>
-          mutate(cor = ifelse(faixa_etaria_padrao == "Ignorada", "#9ba2cb", "#121E87")) |>
+          tab_1(faixa_etaria) |>
+          filter(faixa_etaria != "Total") |>
+          mutate(cor = ifelse(faixa_etaria == "Ignorada", "#9ba2cb", "#121E87")) |>
           ggplot(aes(
-            x = faixa_etaria_padrao, y = `%`, fill = cor, 
-            text = paste("Faixa etária:", faixa_etaria_padrao, "\nProporção: ", `%`, "%", "\nRegistros: ", n)
+            x = faixa_etaria, y = `%`, fill = cor, 
+            text = paste("Faixa etária:", faixa_etaria, "\nProporção: ", `%`, "%", "\nRegistros: ", n)
           )) + 
           geom_bar(stat = "identity") +
           scale_fill_identity() +
@@ -499,12 +422,12 @@ sinan_server <- function(id) {
         content = function(file) {
           tabela_fxetaria <- df_sinan |>
             filter(
-              faixa_etaria_padrao %in% input$filtro_idade,
+              faixa_etaria %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ano %in% input$filtro_ano
             ) |>
-            tab_1(faixa_etaria_padrao) |>
-            arrange(faixa_etaria_padrao)
+            tab_1(faixa_etaria) |>
+            arrange(faixa_etaria)
           
           write.csv(tabela_fxetaria, file, row.names = FALSE)
         }
@@ -523,7 +446,7 @@ sinan_server <- function(id) {
         
         dados_preparados <- df_filtrado |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             les_autop %in% input$les_autop_fil,
             ds_raca %in% input$filtro_raca,
             ano %in% input$filtro_ano
@@ -563,7 +486,7 @@ sinan_server <- function(id) {
         content = function(file) {
           tabela_raca <- df_sinan |>
             filter(
-              faixa_etaria_padrao %in% input$filtro_idade,
+              faixa_etaria %in% input$filtro_idade,
               les_autop %in% input$les_autop_fil,
               ds_raca %in% input$filtro_raca,
               ano %in% input$filtro_ano
@@ -698,7 +621,7 @@ sinan_server <- function(id) {
         
         a <- df_filtrado |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             les_autop %in% input$les_autop_fil,
             ano %in% input$filtro_ano
@@ -713,7 +636,7 @@ sinan_server <- function(id) {
         
         b <- df_filtrado |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             les_autop %in% input$les_autop_fil,
             ano %in% input$filtro_ano
@@ -828,7 +751,7 @@ sinan_server <- function(id) {
         
         dados <- df_sinan |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             les_autop %in% input$les_autop_fil,
             ano %in% input$filtro_ano

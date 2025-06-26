@@ -19,12 +19,13 @@ library(DBI)
 library(RPostgres)
 library(readr)
 
+load("dados/df_iexo.RData")
 
-df_iexo <- read_csv2('dados/tela_sinan_iexo.csv', col_types = cols(.default = col_character()))
+#df_iexo <- read_csv2('dados/tela_sinan_iexo.csv', col_types = cols(.default = col_character()))
 
-df_iexo <- vitallinkage::faixa_etaria(df_iexo |> mutate(nu_idade_anos = as.numeric(nu_idade_anos)))
+#df_iexo <- vitallinkage::faixa_etaria(df_iexo |> mutate(nu_idade_anos = as.numeric(nu_idade_anos)))
 
-df_iexo <- df_iexo |> rename("faixa_etaria_padrao" = faixa_etaria)
+#df_iexo <- df_iexo |> rename("faixa_etaria" = faixa_etaria)
 
 iexo_ui <- function(id) {
   ns <- NS(id)
@@ -44,14 +45,12 @@ iexo_ui <- function(id) {
                             inputId = ns("filtro_idade"),
                             label = strong("Faixa Etária"),
                             multiple = TRUE,
-                            choices = c("<5", "05-09", "10-19",
+                            choices = c("<1", "01-04", "05-09", "10-19",
                                         "20-29", "30-39", "40-49",
-                                        "50-59", "60-69", "70-79", 
-                                        "80+"),
-                            selected = c("<5", "05-09", "10-19",
+                                        "50-59", "60-69", "70-79", "80+"),
+                            selected = c("<1", "01-04", "05-09", "10-19",
                                          "20-29", "30-39", "40-49",
-                                         "50-59", "60-69", "70-79", 
-                                         "80+"),
+                                         "50-59", "60-69", "70-79", "80+"),
                           options = list(
                             `actions-box` = TRUE,
                             noneSelectedText = "Nenhuma seleção"
@@ -200,7 +199,7 @@ iexo_server <- function(id) {
       output$freq_ano_graf <- renderPlotly({
         a <- df_iexo |> 
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns
             
@@ -232,16 +231,16 @@ iexo_server <- function(id) {
       output$faixa_etaria_graf <- renderPlotly({
         a <-  df_iexo |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ano %in% input$filtro_ano
           ) |>
-          tab_1(faixa_etaria_padrao) |>
-          filter(faixa_etaria_padrao != "Total") |> 
-          mutate(cor = ifelse(faixa_etaria_padrao == "Ignorada", "#9ba2cb", "#121E87")) |>
+          tab_1(faixa_etaria) |>
+          filter(faixa_etaria != "Total") |> 
+          mutate(cor = ifelse(faixa_etaria == "Ignorada", "#9ba2cb", "#121E87")) |>
           ggplot(aes(
-            x = faixa_etaria_padrao, y = `%`, fill = cor, 
-            text = paste("Faixa etária:", faixa_etaria_padrao, "\nProporção: ", `%`,"%", "\nRegistros: ", n)
+            x = faixa_etaria, y = `%`, fill = cor, 
+            text = paste("Faixa etária:", faixa_etaria, "\nProporção: ", `%`,"%", "\nRegistros: ", n)
           )) + 
           geom_bar(stat = "identity")+
           scale_fill_identity() +
@@ -266,12 +265,12 @@ iexo_server <- function(id) {
         content = function(file) {
           tabela_fxetaria <-  df_iexo |>
             filter(
-              faixa_etaria_padrao %in% input$filtro_idade,
+              faixa_etaria %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ano %in% input$filtro_ano
             ) |>
-            tab_1(faixa_etaria_padrao) |>
-            arrange(faixa_etaria_padrao)
+            tab_1(faixa_etaria) |>
+            arrange(faixa_etaria)
           write.csv2(tabela_fxetaria, file, row.names = FALSE, fileEncoding = "latin1")
           
         }
@@ -281,7 +280,7 @@ iexo_server <- function(id) {
       output$raca_cor_graf <- renderPlotly({
         dados_preparados <- df_iexo  |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
           ) |>
@@ -325,7 +324,7 @@ iexo_server <- function(id) {
         content = function(file) {
           tabela_raca <-  df_iexo |>
             filter(
-              faixa_etaria_padrao %in% input$filtro_idade,
+              faixa_etaria %in% input$filtro_idade,
               ano %in% input$filtro_ano
             ) |>
             tab_1(ds_raca) |>
@@ -340,7 +339,7 @@ iexo_server <- function(id) {
       output$circunstancia_graf <- renderPlotly({
         data_filtered <- df_iexo |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
@@ -376,7 +375,7 @@ iexo_server <- function(id) {
         content = function(file) {
           tabela_raca <-  df_iexo |>
             filter(
-              faixa_etaria_padrao %in% input$filtro_idade,
+              faixa_etaria %in% input$filtro_idade,
               ano %in% input$filtro_ano
             ) |>
             tab_1(ds_circunstan) |>
@@ -390,7 +389,7 @@ iexo_server <- function(id) {
       output$ag_intox_graf <- renderPlotly({
         data_filtered <- df_iexo |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
@@ -426,7 +425,7 @@ iexo_server <- function(id) {
         content = function(file) {
           tabela_ag_intox <- df_iexo |>
             filter(
-              faixa_etaria_padrao %in% input$filtro_idade,
+              faixa_etaria %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ds_circunstan %in% input$filtro_circuns,
               ano %in% input$filtro_ano
@@ -449,7 +448,7 @@ iexo_server <- function(id) {
     
         a <- df_iexo |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
@@ -464,7 +463,7 @@ iexo_server <- function(id) {
         
         b <- df_iexo |>
           filter(
-            faixa_etaria_padrao %in% input$filtro_idade,
+            faixa_etaria %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
@@ -517,7 +516,7 @@ iexo_server <- function(id) {
           
           a <- df_iexo |>
             filter(
-              faixa_etaria_padrao %in% input$filtro_idade,
+              faixa_etaria %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ds_circunstan %in% input$filtro_circuns,
               ano %in% input$filtro_ano
@@ -532,7 +531,7 @@ iexo_server <- function(id) {
           
           b <- df_iexo |>
             filter(
-              faixa_etaria_padrao %in% input$filtro_idade,
+              faixa_etaria %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ds_circunstan %in% input$filtro_circuns,
               ano %in% input$filtro_ano
