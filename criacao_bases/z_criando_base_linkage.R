@@ -1,21 +1,13 @@
-library(DBI)
 library(reshape2)
 library(vitaltable)
 library(data.table)
-library(RPostgres)
 library(dplyr)
 library(tidyverse)
 library(janitor)
+source("conectar/conectar.R")
 
 # Configurar a conexão ao banco de dados PostgreSQL
-con <- dbConnect(
-  RPostgres::Postgres(),
-  host = "localhost",
-  port = 5432,          # Porta padrão do PostgreSQL
-  user = "postgres",
-  password = "123",
-  dbname = "linkage_recife"
-)
+con <- conectar("linkage")
 
 # Todo banco do sinan_viol
 sinan_viol <- dbGetQuery(con, "SELECT * FROM tratado_sinan_viol")

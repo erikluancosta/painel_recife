@@ -1,21 +1,13 @@
-library(DBI)
 library(reshape2)
 library(vitaltable)
-library(data.table)
-library(RPostgres)
+#library(data.table)
 library(dplyr)
 library(tidyverse)
 library(janitor)
 
-# Configurar a conexão ao banco de dados PostgreSQL
-con <- dbConnect(
-  RPostgres::Postgres(),
-  host = "localhost",
-  port = 5432,          # Porta padrão do PostgreSQL
-  user = "postgres",
-  password = "123",
-  dbname = "linkage_recife"
-)
+source("conectar/conectar.R")
+
+con <- conectar("linkage")
 
 # Todo banco do sinan_viol
 sinan_viol <- dbGetQuery(con, "SELECT * FROM tratado_sinan_viol")
@@ -33,7 +25,10 @@ sih <- dbGetQuery(con, "SELECT * FROM tratado_sih")
 sinan_iexo <- sinan_iexo |> vitallinkage::as_char()
 
 # base para teste da linah da vida
-linha_vida <- bind_rows(sinan_iexo, sinan_viol, sim, sih)#, esus)
+linha_vida <- bind_rows(sinan_iexo |> vitallinkage::as_char(),
+                        sinan_viol|> vitallinkage::as_char(), 
+                        sim |> vitallinkage::as_char(), 
+                        sih |> vitallinkage::as_char())#, esus)
 
 rm(sih, sim, sinan_iexo)#, sinan_viol)
 
@@ -258,20 +253,12 @@ linha_vida2 <- linha_vida2 |>
 
 ## COLOCANDO A DESCRICAO DOS CODIGOS DA CID10
 # Configurar a conexão ao banco de dados PostgreSQL
-con2 <- dbConnect(
-  RPostgres::Postgres(),
-  host = "localhost",
-  port = 5432,          # Porta padrão do PostgreSQL
-  user = "postgres",
-  password = "123",
-  dbname = "erik"
-)
 
-causa_base <-  dbGetQuery(con2, "
-SELECT 
-  \"SUBCAT\" as cd_causabas,
-  \"DESCRABREV_SUB\" as ds_causabas
-FROM tb_cid10")
+causa_base <-  dbGetQuery(con, "
+                        SELECT 
+                          \"SUBCAT\" as cd_causabas,
+                          \"DESCRABREV_SUB\" as ds_causabas
+                        FROM cid10")
 
 causa_base<-causa_base |> unique()
 
@@ -279,11 +266,11 @@ linha_vida2 <- linha_vida2 |> left_join(causa_base, by="cd_causabas")
 
 
 ## Colocando a descricao dos SIH
-diag_pri<-  dbGetQuery(con2, "
-SELECT 
-  \"SUBCAT\" as cd_diag_pri,
-  \"DESCRABREV_SUB\" as ds_diag_pri
-FROM tb_cid10")
+diag_pri<-  dbGetQuery(con, "
+                          SELECT 
+                            \"SUBCAT\" as cd_diag_pri,
+                            \"DESCRABREV_SUB\" as ds_diag_pri
+                          FROM cid10")
 
 diag_pri <- diag_pri |> unique()
 
@@ -295,10 +282,13 @@ diag_pri <- diag_pri |> mutate(
 linha_vida2 <- linha_vida2 |> left_join(diag_pri, by="cd_diag_pri")
 
 # Removendo variáveis desnecessárias
-rm(remover, id, diag_pri, con, con2, sinan_viol, causa_base)
+rm(remover, id, diag_pri, sinan_viol, causa_base)
 
 # Adicionando tipo de procedimento
-load("dados/dicionario_sih_procedimentos.RData")
+dic_procedimentos_sih<-  dbGetQuery(con, "
+                            SELECT 
+                              *
+                            FROM dic_proc_sih")
 
 dic_procedimentos_sih <- dic_procedimentos_sih |> 
   mutate(
