@@ -18,7 +18,6 @@ library(writexl)
 library(RPostgres)
 library(DBI)
 
-#df_sim <- read.csv2('dados/tela_sim.csv')
 load('dados/df_sim.RData')
 
 
