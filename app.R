@@ -57,10 +57,15 @@ app_ui <- bs4DashPage(
     status = "secondary",
     bs4SidebarMenu(
       bs4SidebarMenuItem(
-        "Início",
-        tabName = "home",
-        icon = icon("house")
+        "Mapa da violência",
+        tabName = "mapa_viol",
+        icon = icon("map")
       ),
+      #bs4SidebarMenuItem(
+      #  "Início",
+      #  tabName = "home",
+      #  icon = icon("house")
+      #),
       menuItem("Análises descritivas", icon = icon("chart-column"), 
                menuSubItem("SINAN Violência", tabName = "tela_sinan"),
                menuSubItem("SINAN Intox Exogena", tabName = "tela_iexo"),
@@ -70,11 +75,6 @@ app_ui <- bs4DashPage(
       menuItem("Linkage", icon = icon("link"),
                menuSubItem("Análise do linkage", tabName = "analise_linkage"),
                menuSubItem("Linha da vida", tabName = "linhavida")
-      ),
-      bs4SidebarMenuItem(
-        "Mapa da violência",
-        tabName = "mapa_viol",
-        icon = icon("map")
       ),
       bs4SidebarMenuItem(
         "Nota técnica",
@@ -102,10 +102,10 @@ app_ui <- bs4DashPage(
                ".irs-bar-edge { background-color: transparent !important; }",
                ".irs-slider { background-color: #337ab7 !important; }"),
     bs4TabItems(
-      bs4TabItem(
-        tabName = "home",
-        home_ui("home_")
-      ),
+     # bs4TabItem(
+    #    tabName = "home",
+    #    home_ui("home_")
+     # ),
       bs4TabItem(
         tabName = "tela_sinan",
         sinan_ui("sinan")
@@ -149,7 +149,7 @@ server <- function(input, output, session) {
   res_auth <- secure_server(check_credentials = check_credentials(credentials))
   
   # Agora, carrega os módulos do aplicativo
-  home_server("home_")       # Servidor da tela inicial
+ # home_server("home_")       # Servidor da tela inicial
   sinan_server("sinan")      # Servidor da tela do SINAN
   iexo_server("iexo")        # Servidor da tela do SINAN Intoxicação Exógena
   sih_server("sih")          # Servidor da tela do SIH

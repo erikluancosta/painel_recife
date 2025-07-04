@@ -19,13 +19,33 @@ library(DBI)
 library(RPostgres)
 library(readr)
 
-load("dados/df_iexo.RData")
 
-#df_iexo <- read_csv2('dados/tela_sinan_iexo.csv', col_types = cols(.default = col_character()))
+df_iexo <- read_csv2('dados/tela_sinan_iexo.csv', col_types = cols(.default = col_character()))
 
-#df_iexo <- vitallinkage::faixa_etaria(df_iexo |> mutate(nu_idade_anos = as.numeric(nu_idade_anos)))
+df_iexo <- df_iexo |> 
+  dplyr::mutate(
+    nu_idade_anos = as.numeric(nu_idade_anos),
+    faixa_etaria_padrao = dplyr::case_when(
+      nu_idade_anos < 1 ~ "<1",
+      nu_idade_anos >= 1 & nu_idade_anos <= 4 ~ "01-04",
+      nu_idade_anos >= 5 & nu_idade_anos <= 9 ~ "05-09", 
+      nu_idade_anos >= 10 & nu_idade_anos <= 14 ~ "10-14", 
+      nu_idade_anos >= 15 & nu_idade_anos <= 19 ~ "15-19", 
+      nu_idade_anos >= 20 & nu_idade_anos <= 29 ~ "20-29", 
+      nu_idade_anos >= 30 & nu_idade_anos <= 39 ~ "30-39", 
+      nu_idade_anos >= 40 & nu_idade_anos <= 49 ~ "40-49", 
+      nu_idade_anos >= 50 & nu_idade_anos <= 59 ~ "50-59", 
+      nu_idade_anos >= 60 & nu_idade_anos <= 69 ~ "60-69", 
+      nu_idade_anos >= 70 & nu_idade_anos <= 79 ~ "70-79", 
+      nu_idade_anos >= 80 ~ "80+", 
+      TRUE ~ as.character(nu_idade_anos)
+    )
+  )
 
-#df_iexo <- df_iexo |> rename("faixa_etaria" = faixa_etaria)
+
+  
+
+#df_iexo <- df_iexo |> rename("faixa_etaria_padrao" = faixa_etaria)
 
 iexo_ui <- function(id) {
   ns <- NS(id)
@@ -45,12 +65,12 @@ iexo_ui <- function(id) {
                             inputId = ns("filtro_idade"),
                             label = strong("Faixa Etária"),
                             multiple = TRUE,
-                            choices = c("<1", "01-04", "05-09", "10-19",
+                            choices = c("<1", "01-04", "05-09", "10-14", "15-19",
                                         "20-29", "30-39", "40-49",
-                                        "50-59", "60-69", "70-79", "80+"),
-                            selected = c("<1", "01-04", "05-09", "10-19",
+                                        "50-59", "60-69", "70-79", "80+", "Ignorada"),
+                            selected = c("<1", "01-04", "05-09", "10-14", "15-19",
                                          "20-29", "30-39", "40-49",
-                                         "50-59", "60-69", "70-79", "80+"),
+                                         "50-59", "60-69", "70-79", "80+", "Ignorada"),
                           options = list(
                             `actions-box` = TRUE,
                             noneSelectedText = "Nenhuma seleção"
@@ -199,7 +219,7 @@ iexo_server <- function(id) {
       output$freq_ano_graf <- renderPlotly({
         a <- df_iexo |> 
           filter(
-            faixa_etaria %in% input$filtro_idade,
+            faixa_etaria_padrao %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns
             
@@ -231,16 +251,17 @@ iexo_server <- function(id) {
       output$faixa_etaria_graf <- renderPlotly({
         a <-  df_iexo |>
           filter(
-            faixa_etaria %in% input$filtro_idade,
+            faixa_etaria_padrao %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
+            ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
           ) |>
-          tab_1(faixa_etaria) |>
-          filter(faixa_etaria != "Total") |> 
-          mutate(cor = ifelse(faixa_etaria == "Ignorada", "#9ba2cb", "#121E87")) |>
+          tab_1(faixa_etaria_padrao) |>
+          filter(faixa_etaria_padrao != "Total") |> 
+          mutate(cor = ifelse(faixa_etaria_padrao == "Ignorada", "#9ba2cb", "#121E87")) |>
           ggplot(aes(
-            x = faixa_etaria, y = `%`, fill = cor, 
-            text = paste("Faixa etária:", faixa_etaria, "\nProporção: ", `%`,"%", "\nRegistros: ", n)
+            x = faixa_etaria_padrao, y = `%`, fill = cor, 
+            text = paste("Faixa etária:", faixa_etaria_padrao, "\nProporção: ", `%`,"%", "\nRegistros: ", n)
           )) + 
           geom_bar(stat = "identity")+
           scale_fill_identity() +
@@ -260,18 +281,19 @@ iexo_server <- function(id) {
       # Faixa etária download
       output$download_tab_faixa_etaria <- downloadHandler(
         filename = function() {
-          paste("dados-faixa-etaria-", Sys.Date(), ".csv", sep="")
+          paste("dados-faixa-etaria-sinan-iexo", Sys.Date(), ".xlsx")
         },
         content = function(file) {
           tabela_fxetaria <-  df_iexo |>
             filter(
-              faixa_etaria %in% input$filtro_idade,
+              faixa_etaria_padrao %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
+              ds_circunstan %in% input$filtro_circuns,
               ano %in% input$filtro_ano
             ) |>
-            tab_1(faixa_etaria) |>
-            arrange(faixa_etaria)
-          write.csv2(tabela_fxetaria, file, row.names = FALSE, fileEncoding = "latin1")
+            tab_1(faixa_etaria_padrao) |>
+            arrange(faixa_etaria_padrao)
+          writexl::write_xlsx(tabela_fxetaria, file)
           
         }
       )
@@ -280,7 +302,8 @@ iexo_server <- function(id) {
       output$raca_cor_graf <- renderPlotly({
         dados_preparados <- df_iexo  |>
           filter(
-            faixa_etaria %in% input$filtro_idade,
+            faixa_etaria_padrao %in% input$filtro_idade,
+            ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
           ) |>
@@ -319,18 +342,18 @@ iexo_server <- function(id) {
       # Raça/cor download
       output$download_tab_raca_cor <- downloadHandler(
         filename = function() {
-          paste("dados-raca-cor-", Sys.Date(), ".csv", sep="")
+          paste("dados-raca-cor-sinan-iexo", Sys.Date(), ".xlsx")
         },
         content = function(file) {
           tabela_raca <-  df_iexo |>
             filter(
-              faixa_etaria %in% input$filtro_idade,
+              faixa_etaria_padrao %in% input$filtro_idade,
+              ds_raca %in% input$filtro_raca,
+              ds_circunstan %in% input$filtro_circuns,
               ano %in% input$filtro_ano
             ) |>
-            tab_1(ds_raca) |>
-            filter(ds_raca != "Total") |>
-            arrange(ds_raca)
-          write.csv2(tabela_raca, file, row.names = FALSE, fileEncoding = "latin1")
+            tab_1(ds_raca) 
+          writexl::write_xlsx(tabela_raca, file)
 
           
         })
@@ -339,7 +362,7 @@ iexo_server <- function(id) {
       output$circunstancia_graf <- renderPlotly({
         data_filtered <- df_iexo |>
           filter(
-            faixa_etaria %in% input$filtro_idade,
+            faixa_etaria_padrao %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
@@ -370,18 +393,18 @@ iexo_server <- function(id) {
       # tabela circunstancia
       output$download_tab_circunstancia <- downloadHandler(
         filename = function() {
-          paste("dados-circunstancia-", Sys.Date(), ".csv", sep="")
+          paste("dados-circunstancia-sinan-iexo", Sys.Date(), ".xlsx")
         },
         content = function(file) {
           tabela_raca <-  df_iexo |>
             filter(
-              faixa_etaria %in% input$filtro_idade,
+              faixa_etaria_padrao %in% input$filtro_idade,
+              ds_raca %in% input$filtro_raca,
+              ds_circunstan %in% input$filtro_circuns,
               ano %in% input$filtro_ano
             ) |>
-            tab_1(ds_circunstan) |>
-            filter(ds_circunstan != "Total") |>
-            arrange(ds_circunstan)
-          write.csv2(tabela_raca, file, row.names = FALSE, fileEncoding = "latin1")
+            tab_1(ds_circunstan) 
+          writexl::write_xlsx(tabela_raca, file)
           
         })
       
@@ -389,7 +412,7 @@ iexo_server <- function(id) {
       output$ag_intox_graf <- renderPlotly({
         data_filtered <- df_iexo |>
           filter(
-            faixa_etaria %in% input$filtro_idade,
+            faixa_etaria_padrao %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
@@ -420,20 +443,19 @@ iexo_server <- function(id) {
       # Download handler for Agente Intoxicante
       output$download_tab_ag_intox <- downloadHandler(
         filename = function() {
-          paste("dados-agente-intoxicante-", Sys.Date(), ".csv", sep="")
+          paste("dados-agente-intoxicante-sinan-iexo", Sys.Date(), ".xlsx")
         },
         content = function(file) {
           tabela_ag_intox <- df_iexo |>
             filter(
-              faixa_etaria %in% input$filtro_idade,
+              faixa_etaria_padrao %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ds_circunstan %in% input$filtro_circuns,
               ano %in% input$filtro_ano
             ) |>
-            tab_1(ds_agente_tox) |>
-            filter(ds_agente_tox != "Total") |>
-            arrange(ds_agente_tox)
-          write.csv2(tabela_ag_intox, file, row.names = FALSE, fileEncoding = "latin1")
+            tab_1(ds_agente_tox) 
+          
+          writexl::write_xlsx(tabela_ag_intox, file)
           
         }
       )
@@ -448,7 +470,7 @@ iexo_server <- function(id) {
     
         a <- df_iexo |>
           filter(
-            faixa_etaria %in% input$filtro_idade,
+            faixa_etaria_padrao %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
@@ -463,7 +485,7 @@ iexo_server <- function(id) {
         
         b <- df_iexo |>
           filter(
-            faixa_etaria %in% input$filtro_idade,
+            faixa_etaria_padrao %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ds_circunstan %in% input$filtro_circuns,
             ano %in% input$filtro_ano
@@ -510,13 +532,13 @@ iexo_server <- function(id) {
       # tabela hospitalizacoes
       output$download_atend_hospit_graf <- downloadHandler(
         filename = function() {
-          paste("dados-atendimento_hospitalizacao-", Sys.Date(), ".csv", sep="")
+          paste("dados-atendimento_hospitalizacao-sinan-iexo", Sys.Date(), ".xlsx")
         },
         content = function(file) {
           
           a <- df_iexo |>
             filter(
-              faixa_etaria %in% input$filtro_idade,
+              faixa_etaria_padrao %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ds_circunstan %in% input$filtro_circuns,
               ano %in% input$filtro_ano
@@ -531,7 +553,7 @@ iexo_server <- function(id) {
           
           b <- df_iexo |>
             filter(
-              faixa_etaria %in% input$filtro_idade,
+              faixa_etaria_padrao %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ds_circunstan %in% input$filtro_circuns,
               ano %in% input$filtro_ano
@@ -545,10 +567,9 @@ iexo_server <- function(id) {
                                  values_to = "%")
           
           
-          c <- merge(a,b, by=c('ds_tpatend', 'ds_hospital')) |> mutate(text = paste("Tipo de atendimento:", ds_tpatend, "\nProporção: ", round(`%`, 1), "%", "\nRegistros: ", n))
-          
-          
-          write.csv2(c, file, row.names = FALSE, fileEncoding = "latin1")
+          c <- merge(a,b, by=c('ds_tpatend', 'ds_hospital'))
+
+          writexl::write_xlsx(c, file)
         })
       
     

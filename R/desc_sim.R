@@ -18,10 +18,29 @@ library(writexl)
 library(RPostgres)
 library(DBI)
 
-load('dados/df_sim.Rdata')
+#df_sim <- read.csv2('dados/tela_sim.csv')
+load('dados/df_sim.RData')
+
 
 df_sim <- df_sim |> 
-  mutate(faixa_etaria = ifelse(is.na(faixa_etaria), "Ignorada", faixa_etaria))
+  dplyr::mutate(
+    nu_idade_anos = as.numeric(nu_idade_anos),
+    faixa_etaria_padrao = dplyr::case_when(
+      nu_idade_anos < 1 ~ "<1",
+      nu_idade_anos >= 1 & nu_idade_anos <= 4 ~ "01-04",
+      nu_idade_anos >= 5 & nu_idade_anos <= 9 ~ "05-09", 
+      nu_idade_anos >= 10 & nu_idade_anos <= 14 ~ "10-14", 
+      nu_idade_anos >= 15 & nu_idade_anos <= 19 ~ "15-19", 
+      nu_idade_anos >= 20 & nu_idade_anos <= 29 ~ "20-29", 
+      nu_idade_anos >= 30 & nu_idade_anos <= 39 ~ "30-39", 
+      nu_idade_anos >= 40 & nu_idade_anos <= 49 ~ "40-49", 
+      nu_idade_anos >= 50 & nu_idade_anos <= 59 ~ "50-59", 
+      nu_idade_anos >= 60 & nu_idade_anos <= 69 ~ "60-69", 
+      nu_idade_anos >= 70 & nu_idade_anos <= 79 ~ "70-79", 
+      nu_idade_anos >= 80 ~ "80+", 
+      TRUE ~ "Ignorada"
+    )
+  )
 
 sim_ui <- function(id) {
   ns <- NS(id)
@@ -44,14 +63,12 @@ sim_ui <- function(id) {
                        `actions-box` = TRUE,
                        noneSelectedText = "Nenhuma seleção"
                      ),
-                     choices = c("<1", "01-04", "05-09", "10-19",
+                     choices = c("<1", "01-04", "05-09", "10-14", "15-19",
                                  "20-29", "30-39", "40-49",
-                                 "50-59", "60-69", "70-79", 
-                                 "80+", "Ignorada"),
-                     selected = c("<1", "01-04", "05-09", "10-19",
+                                 "50-59", "60-69", "70-79", "80+", "Ignorada"),
+                     selected = c("<1", "01-04", "05-09", "10-14", "15-19",
                                   "20-29", "30-39", "40-49",
-                                  "50-59", "60-69", "70-79", 
-                                  "80+", "Ignorada")
+                                  "50-59", "60-69", "70-79", "80+", "Ignorada")
                    )
                  )
           ),
@@ -100,6 +117,18 @@ sim_ui <- function(id) {
                  )
           )
         )
+      )
+    ),
+    
+    fluidRow(
+      
+      box(title=strong("Frequência de notificação por ano"),
+          width = 12,
+          status = "secondary",
+          maximizable = FALSE,
+          closable = FALSE,
+          solidHeader = TRUE,
+          plotlyOutput(ns("freq_ano_graf"))
       )
     ),
     
@@ -154,21 +183,52 @@ sim_server <- function(id) {
   moduleServer(
     id,
     function(input, output, session) {
+      output$freq_ano_graf <- renderPlotly({
+        
+        a <- df_sim |> 
+          filter(
+            faixa_etaria_padrao %in% input$filtro_idade,
+            ds_raca %in% input$filtro_raca
+          ) |> 
+          tab_1(ano) |>
+          filter(ano != "Total") |>
+          ggplot(aes(
+            x = ano, 
+            y = `n`, 
+            group = 1,
+            color = "#9ba2cb",
+            text = paste("Ano:", ano, "\nProporção: ", `%`,"%", "\nRegistros: ", n)
+          )) +
+          geom_line(size = 1) +
+          scale_color_identity() +
+          scale_y_continuous(limits = c(5000, 9000)) +
+          labs(x = "Ano", y = "Frequência") +
+          theme_minimal() +
+          theme(legend.position = "none")
+        
+        ggplotly(a, tooltip = "text") |> layout(
+          hoverlabel = list(
+            bgcolor = "#FAF4F0",
+            font = list(color = "black")
+          )
+        )
+      })
+      
       # Gráfico Faixa etária
       output$faixa_etaria_graf <- renderPlotly({
         
         a <-  df_sim |>
           filter(
-            faixa_etaria %in% input$filtro_idade,
+            faixa_etaria_padrao %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ano %in% input$filtro_ano
           ) |> 
-          tab_1(faixa_etaria) |>
-          filter(faixa_etaria != "Total") |> 
-          mutate(cor = ifelse(faixa_etaria == "Ignorada", "#9ba2cb", "#121E87")) |>
+          tab_1(faixa_etaria_padrao) |>
+          filter(faixa_etaria_padrao != "Total") |> 
+          mutate(cor = ifelse(faixa_etaria_padrao == "Ignorada", "#9ba2cb", "#121E87")) |>
           ggplot(aes(
-            x = faixa_etaria, y = `%`, fill = cor, 
-            text = paste("Faixa etária:", faixa_etaria, "\nProporção: ", `%`,"%", "\nRegistros: ", n)
+            x = faixa_etaria_padrao, y = `%`, fill = cor, 
+            text = paste("Faixa etária:", faixa_etaria_padrao, "\nProporção: ", `%`,"%", "\nRegistros: ", n)
           )) + 
           geom_bar(stat = "identity")+
           scale_fill_identity() +
@@ -193,13 +253,13 @@ sim_server <- function(id) {
         content = function(file) {
           tabela_fxetaria <-  df_sim |>
             filter(
-              faixa_etaria %in% input$filtro_idade,
+              faixa_etaria_padrao %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ano %in% input$filtro_ano
             ) |>
-            tab_1(faixa_etaria) |>
-            filter(faixa_etaria != "Total") |>
-            arrange(faixa_etaria)
+            tab_1(faixa_etaria_padrao) |>
+            filter(faixa_etaria_padrao != "Total") |>
+            arrange(faixa_etaria_padrao)
           write_xlsx(tabela_fxetaria, file)
         }
       )
@@ -208,7 +268,7 @@ sim_server <- function(id) {
       output$raca_cor_graf <- renderPlotly({
         dados_preparados <- df_sim |>
           filter(
-            faixa_etaria %in% input$filtro_idade,
+            faixa_etaria_padrao %in% input$filtro_idade,
             ds_raca %in% input$filtro_raca,
             ano %in% input$filtro_ano
           ) |>
@@ -256,7 +316,7 @@ sim_server <- function(id) {
         content = function(file) {
           tabela_raca <-  df_sim |>
             filter(
-              faixa_etaria %in% input$filtro_idade,
+              faixa_etaria_padrao %in% input$filtro_idade,
               ds_raca %in% input$filtro_raca,
               ano %in% input$filtro_ano
             ) |>

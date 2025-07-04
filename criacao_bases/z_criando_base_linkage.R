@@ -25,7 +25,10 @@ sih <- dbGetQuery(con, "SELECT * FROM tratado_sih")
 sinan_iexo <- sinan_iexo |> vitallinkage::as_char()
 
 # base para analse de linkage
-base_linkage <- bind_rows(sinan_iexo, sinan_viol, sim, sih)#, esus)
+base_linkage <- bind_rows(sinan_iexo |> vitallinkage::as_char(),
+                          sinan_viol |> vitallinkage::as_char(), 
+                          sim |> vitallinkage::as_char(), 
+                          sih |> vitallinkage::as_char())#, esus)
 
 rm(sih, sim, sinan_iexo)#, sinan_viol)
 # Tabela de Id
@@ -298,3 +301,88 @@ base_linkage <- base_linkage2 |>
 
 
 save(base_linkage, file='dados/base_linkage.RData')
+
+
+con <- conectar("linkage")
+a <- dbGetQuery(con, "SELECT id_pareamento,
+                             ds_nome_pac,
+                             dt_nasc,
+                             ds_nome_mae,
+                             nu_cns,
+                             banco
+                      FROM processo_linkage 
+                      WHERE banco <> 'ESUS_APS'
+                      AND sg_sexo = 'F'
+                      AND ano::NUMERIC BETWEEN 2016 AND 2022")
+
+c <- dbGetQuery(con,
+                "SELECT id_pareamento,
+                        par_c1,
+                        par_c2,
+                        par_c3,
+                        par_c4,
+                        par_c5,
+                        par_c6,
+                        par_c7,
+                        par_c8,
+                        par_c9,
+                        par_c10,
+                        par_c11,
+                        par_c12,
+                        par_c13,
+                        par_c14,
+                        par_c15,
+                        par_c16,
+                        par_c17,
+                        par_c18,
+                        par_c19,
+                        par_c20,
+                        par_c21,
+                        par_c22,
+                        par_c23,
+                        par_c24,
+                        par_c25,
+                        par_c26,
+                        par_c27,
+                        par_c28,
+                        par_c29,
+                        par_c30,
+                        par_c31,
+                        par_c32,
+                        par_c33,
+                        par_c34,
+                        par_c35,
+                        par_c36,
+                        par_c37,
+                        par_c38,
+                        par_c39,
+                        par_c40,
+                        par_c41,
+                        par_c42,
+                        par_c43,
+                        par_c44,
+                        par_c45,
+                        par_c46,
+                        par_c47,
+                        par_c48,
+                        par_c49,
+                        par_c50,
+                        par_c51,
+                        par_c52,
+                        par_c53,
+                        par_c54,
+                        par_c55,
+                        par_c56,
+                        ds_nome_pac,
+                        dt_nasc,
+                        ds_nome_mae,
+                        nu_cns,
+                        banco
+                 FROM processo_linkage 
+                 WHERE banco = 'SIM'
+                 AND id_pareamento IN (515817, 729884, 749320, 750427,751735)")
+
+
+b <- a |> filter(banco == 'SIM') |> 
+  group_by(id_pareamento) |> 
+  summarise(freq = n())

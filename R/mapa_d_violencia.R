@@ -97,10 +97,10 @@ mapa_ui <- function(id) {
       )
     ),
     # Botão para mostrar/ocultar opções do mapa
-    absolutePanel(
-      top = 80, right = 120,
-      actionButton(ns("toggle_mapa"), "Mapa")
-    ),
+    #absolutePanel(
+    #  top = 80, right = 120,
+    #  actionButton(ns("toggle_mapa"), "Mapa")
+    #),
     # Painel de opções do mapa
     absolutePanel(
       top = 130, right = 120,
