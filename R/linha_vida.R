@@ -7,9 +7,7 @@ library(lubridate)
 library(scales)
 library(DBI)
 
-#load("dados/df_linha_vida.RData")
-
-# O CERTO
+# Carregando linha da vida
 load("dados/linha_vida3.RData")
 
 df_linha_vida <- df_linha_vida |> 
@@ -19,9 +17,7 @@ df_linha_vida <- df_linha_vida |>
   ) |> 
   ungroup()
 
-# Para ver violencia sexual e parto
-#load("dados/temp_teste_vida.RData")
-
+# Faixa etária
 df_linha_vida <- df_linha_vida |> 
   group_by(id_pessoa) |> 
   mutate(idade_minima = min(nu_idade_anos, na.rm = TRUE)) |> 
@@ -43,8 +39,6 @@ df_linha_vida <- df_linha_vida |>
       TRUE ~ "Ignorada"
     )
   )
-
-#vitallinkage::faixa_etaria()
 
 linhavida_ui <- function(id) {
   ns <- NS(id)
@@ -84,10 +78,6 @@ linhavida_ui <- function(id) {
                    pickerInput(inputId = ns("filtro_banco"),
                                label = strong("Banco de dados"),
                                multiple = TRUE,
-                              # options = list(
-                              #   `actions-box` = TRUE,
-                              #   noneSelectedText = "Nenhuma seleção"
-                              # ),
                                choices = c(
                                  "Exclusivo SINAN Violências"     = "EXCLUSIVO_SINAN_VIOL",
                                   "SINAN Violências" = "SINAN_VIOL",

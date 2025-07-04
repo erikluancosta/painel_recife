@@ -1,6 +1,3 @@
-# -----------------
-# Pacotes necessários
-# -----------------
 library(shiny)
 library(bs4Dash)
 library(ciTools)
@@ -25,12 +22,9 @@ library(stringr)
 # Bases e pré‑processamento
 # -----------------
 load("dados/base_linkage4.RData")   # objeto: base_linkage
-#rm(base_linkage)   # libera memória
 
 # Base principal de linkage (para as caixas/filtros)
 base_linkage <- base_linkage |>
-  #left_join(ids_iexo, by = "id_pessoa") |>
-  #mutate(FL_SINAN_IEXO = tidyr::replace_na(FL_SINAN_IEXO, 0)) |> 
   select(id_pareamento, id_pessoa, ds_raca, faixa_etaria_padrao,
          banco, cd_causabas,
          fl_viol_fisic, fl_viol_psico, fl_viol_tort, fl_viol_sexu,
@@ -418,7 +412,6 @@ linkage_server <- function(id) {
             ds_raca %in% input$filtro_raca,
             banco %in% input$filtro_banco,
             FL_ESUS_APS %in% input$filtro_esus
-            #FL_CAD_UNICO_PESSOA %in% input$filtro_cadunico
           ) |>
           distinct(id_pessoa, ds_raca, sg_sexo, faixa_etaria_padrao) |>
           tab_1(faixa_etaria_padrao) |>

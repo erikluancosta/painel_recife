@@ -363,13 +363,3 @@ mapa_server <- function(id) {
   })
 }
 
-# Interface simples para testar o módulo do mapa
-ui <- fluidPage(
-  mapa_ui("mapa1")
-)
-
-server <- function(input, output, session) {
-  mapa_server("mapa1")
-}
-
-shinyApp(ui, server)

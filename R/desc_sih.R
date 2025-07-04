@@ -19,6 +19,8 @@ library(RPostgres)
 library(DBI)
 
 load("dados/df_sih.RData")
+
+# Definir a faixa etária
 df_sih <- df_sih |> 
   dplyr::mutate(
     nu_idade_anos = as.numeric(nu_idade_anos),
@@ -286,8 +288,7 @@ sih_server <- function(id) {
         cid_10 <- read.csv2('dados/cid_10.csv')
         
         cid_10 <- cid_10 |> unique()
-        #cid_10 <- openxlsx::read.xlsx('dados/cid10_tratado.xlsx')
-        
+
         df_sih_mod <- df_sih |> 
           filter(ano %in% input$filtro_ano) |> 
           left_join(cid_10, by = c("cd_diag_pri" = "SUBCAT")) |> 

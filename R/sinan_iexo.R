@@ -43,10 +43,6 @@ df_iexo <- df_iexo |>
   )
 
 
-  
-
-#df_iexo <- df_iexo |> rename("faixa_etaria_padrao" = faixa_etaria)
-
 iexo_ui <- function(id) {
   ns <- NS(id)
   
@@ -461,7 +457,6 @@ iexo_server <- function(id) {
       )
       
       
-      
       output$atend_hospit_graf <- renderPlotly({
         
         # Se não houver seleção, retorna o dataframe completo
@@ -572,7 +567,6 @@ iexo_server <- function(id) {
           writexl::write_xlsx(c, file)
         })
       
-    
     }
   )
 }

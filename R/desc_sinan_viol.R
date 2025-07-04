@@ -22,8 +22,6 @@ library(readr)
 
 
 # Carregando os dados
-#df_sinan <- read_csv2('dados/tela_sinan_viol.csv', col_types = cols(.default = col_character()))
-
 load('dados/sinan_viol.RData')
 
 
@@ -917,8 +915,6 @@ sinan_server <- function(id) {
           writexl::write_xlsx(dados, file)
         }
       )
-      
-      # Outros gráficos (como o gráfico de "sexo_agressor_graf" e "uso_alc_graf") permanecem inalterados
       
     }
   )
