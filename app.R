@@ -20,6 +20,7 @@ library(haven)
 library(writexl)
 library(fresh)
 library(shinymanager)
+options(bitmapType = "cairo")
 
 # Configurar a conexão ao banco de dados PostgreSQL
 rel <- vitaltable::rel
@@ -70,12 +71,12 @@ app_ui <- bs4DashPage(
       menuItem("Linkage", icon = icon("link"),
                menuSubItem("Análise do linkage", tabName = "analise_linkage"),
                menuSubItem("Linha da vida", tabName = "linhavida")
-      ),
-      bs4SidebarMenuItem(
-        "Nota técnica",
-        tabName = "introducao",
-        icon = icon("clipboard")
-      )
+      )#,
+      #bs4SidebarMenuItem(
+      #  "Nota técnica",
+      #  tabName = "introducao",
+      #  icon = icon("clipboard")
+      #)
     )
   ),
   body = bs4DashBody(
