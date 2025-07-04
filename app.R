@@ -35,12 +35,7 @@ tema <- fresh::create_theme(
   )
 )
 
-# Define as credenciais para acesso (login e senha: "admin")
-credentials <- data.frame(
-  user = c("admin"),
-  password = c("admin"),
-  stringsAsFactors = FALSE
-)
+source("conectar/credenciais.R")  # Importa as credenciais do arquivo credenciais.R
 
 print(credentials)
 
