@@ -14,7 +14,13 @@ library(RPostgres)
 load('dados/cnes.RData')
 load('dados/pontos_viol.RData')
 load('dados/cnes_join.RData')
-load('dados/pontos_viol.RData')
+load('dados/pontos_viol_real.RData')
+
+pontos_viol <- pontos_viol |> 
+  mutate(
+    Latitude = as.numeric(Latitude),
+    Longitude = as.numeric(Longitude)
+  )
 
 df_linha_vida2 <- df_linha_vida |>
   left_join(cnes_join, by = "id_unico")
@@ -267,8 +273,8 @@ mapa_server <- function(id) {
         if (nrow(filtered_pontos()) > 0) {
           map <- map %>% addWebGLHeatmap(
             data = filtered_pontos(),
-            lng = ~longitude_final, 
-            lat = ~latitude_final,
+            lng = ~Longitude, 
+            lat = ~Latitude,
             size = 60000,
             group = "heatmap"
           )
@@ -277,8 +283,8 @@ mapa_server <- function(id) {
         if (nrow(filtered_pontos()) > 0) {
           map <- map %>% addCircleMarkers(
             data = filtered_pontos(),
-            lng = ~longitude_final, 
-            lat = ~latitude_final,
+            lng = ~Longitude, 
+            lat = ~Latitude,
             color = ~ifelse(highlight, input$highlight_color, input$default_color),
             radius = ~ifelse(highlight, 5, 1),
             fillOpacity = 0.7,
@@ -328,8 +334,8 @@ mapa_server <- function(id) {
           leafletProxy("mapa") %>%
             addHeatmap(
               data = filtered_pontos(),
-              lng = ~longitude_final, 
-              lat = ~latitude_final,
+              lng = ~Longitude, 
+              lat = ~Latitude,
               intensity = ~1,
               blur = 20,
               max = 0.05,
@@ -343,8 +349,8 @@ mapa_server <- function(id) {
           leafletProxy("mapa") %>%
             addCircleMarkers(
               data = filtered_pontos(),
-              lng = ~longitude_final, 
-              lat = ~latitude_final,
+              lng = ~Longitude, 
+              lat = ~Latitude,
               color = ~ifelse(highlight, input$highlight_color, input$default_color),
               radius = ~ifelse(highlight, 5, 1),
               fillOpacity = 0.7,
